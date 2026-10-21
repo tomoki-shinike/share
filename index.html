@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI活用ツール集</title>
+<style>
+  :root{
+    --text:#1f2933; --sub:#617080; --accent:#1d6fa5; --accent-soft:#e3f0f8; --line:#e1e6ec;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;font-family:"Hiragino Sans","Yu Gothic",Meiryo,sans-serif;color:var(--text);line-height:1.6;
+    /* 背景写真：images フォルダに background.jpg を置くと表示されます。無いときは色のグラデーション */
+    background:#dbe9f1 url("images/background.jpg") center/cover fixed no-repeat;
+    background-image:url("images/background.jpg"),linear-gradient(135deg,#cfe3ef,#d9efe9);
+    min-height:100vh;
+  }
+  header{padding:36px 20px 18px;text-align:center;color:#fff;text-shadow:0 1px 6px rgba(0,0,0,.45)}
+  header h1{margin:0 0 6px;font-size:1.6rem}
+  header p{margin:0;font-size:.92rem}
+  .share{margin-top:12px}
+  .share button{background:rgba(255,255,255,.92);border:none;border-radius:999px;padding:6px 16px;font-size:.82rem;cursor:pointer;color:var(--accent)}
+  main{max-width:860px;margin:0 auto;padding:10px 12px 50px}
+  .panel{background:rgba(255,255,255,.93);border-radius:14px;padding:12px 14px;box-shadow:0 4px 18px rgba(0,0,0,.12)}
+  .search{width:100%;padding:9px 12px;border:1px solid var(--line);border-radius:8px;font-size:1rem;margin-bottom:6px}
+  .count{font-size:.8rem;color:var(--sub);margin:4px 2px 6px}
+  .row{border-top:1px solid var(--line)}
+  .line{display:flex;align-items:center;gap:10px;padding:8px 4px}
+  .name{font-weight:600;white-space:nowrap}
+  .desc{flex:1;min-width:0;color:var(--sub);font-size:.85rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .thumb{width:44px;height:44px;flex-shrink:0;border:1px solid var(--line);border-radius:6px;background:#fff;display:flex;align-items:center;justify-content:center;cursor:zoom-in;overflow:hidden;padding:2px}
+  .thumb img,.thumb canvas{max-width:100%;max-height:100%;display:block}
+  .thumb.none{cursor:default;background:#f0f2f5;color:#a0abb7;font-size:.7rem}
+  .btn{padding:5px 12px;border-radius:7px;font-size:.82rem;text-decoration:none;border:1px solid var(--accent);color:var(--accent);background:#fff;flex-shrink:0}
+  .btn.primary{background:var(--accent);color:#fff}
+  .btn.off{border-color:var(--line);color:#a0abb7;background:#f0f2f5}
+  .empty{text-align:center;color:var(--sub);padding:30px 0}
+  footer{text-align:center;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.5);font-size:.78rem;padding:0 0 24px}
+  #modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);align-items:center;justify-content:center;z-index:9;padding:16px}
+  #modal.open{display:flex}
+  #modal .box{background:#fff;border-radius:14px;padding:20px;text-align:center;max-width:92vw}
+  #modal .ttl{font-weight:600;margin-bottom:10px}
+  #modal .big img,#modal .big canvas{max-width:min(320px,80vw);display:block;margin:0 auto}
+  #modal .url{font-size:.75rem;color:var(--sub);word-break:break-all;margin-top:8px;max-width:320px}
+  #modal .close{font-size:.8rem;margin-top:10px;color:var(--accent)}
+  @media (max-width:560px){ .desc{display:none} .name{flex:1;white-space:normal} }
+</style>
+</head>
+<body>
+<header>
+  <h1>AI活用ツール集</h1>
+  <p>生成AIの力を借りて作った、リハビリ業務のためのツールです</p>
+  <div class="share"><button id="pageQr">このページのQRコードを表示</button></div>
+</header>
+
+<main>
+  <div class="panel">
+    <input id="q" class="search" type="search" placeholder="ツール名・キーワードで探す">
+    <div class="count" id="count"></div>
+    <div id="list"></div>
+  </div>
+</main>
+<footer>最終更新：<span id="updated"></span></footer>
+
+<div id="modal"><div class="box"><div class="ttl" id="mTtl"></div><div class="big" id="mBig"></div><div class="url" id="mUrl"></div><div class="close">タップで閉じる</div></div></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+/* ============================================================
+   ★ツールを追加・変更するときは、ここだけ編集します★
+   追加するときは、{ ... }, のかたまりをコピーして貼り付けます。
+   - title : ツールの名前
+   - desc  : 短い説明（1行に収まるよう、短めがおすすめ）
+   - url   : 公開済みのツールのURL（空なら「準備中」と表示）
+   - qr    : QR画像を使いたいときだけ。ふだんは "" のままでOK（URLから自動で作ります）
+   - UPDATED : 最終更新日（ページの下に表示されます）
+   ============================================================ */
+const UPDATED = "2026-10-22";
+
+const TOOLS = [
+  {
+    "title": "認知課題のツール",
+    "desc": "図形模写・TMT・抹消課題などを画面で実施し、結果用紙を印刷",
+    "url": "https://tomoki-shinike.github.io/cognitive-tasks/",
+    "qr": ""
+  },
+  {
+    "title": "住環境調整ツール",
+    "desc": "間取りに手すりや段差を描き、改修前後を比べて3Dで確認",
+    "url": "https://tomoki-shinike.github.io/Home-Consultation/",
+    "qr": ""
+  },
+  {
+    "title": "動画解析ツール",
+    "desc": "写真・動画から関節の角度や歩行のリズムを調べる",
+    "url": "https://tomoki-shinike.github.io/motion-viz/",
+    "qr": ""
+  }
+];
+/* ================== ここから下は触らなくてOK ================== */
+</script>
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+// 相対のURL（tools/xxx.html など）も、公開ページのURLに直してQRにする
+const fullUrl = u => { try { return new URL(u, location.href).href; } catch(e){ return u; } };
+
+// QRを表示：添付画像があればそれを、なければURLから自動で作る
+function drawQr(el, t, size){
+  el.innerHTML = "";
+  if (t.qr) { const img = document.createElement("img"); img.src = t.qr; img.alt = "QRコード"; el.appendChild(img); return; }
+  if (typeof QRCode === "undefined") { el.textContent = "QR"; return; }
+  new QRCode(el, { text: fullUrl(t.url), width: size, height: size, correctLevel: QRCode.CorrectLevel.M });
+}
+
+function openModal(title, t){
+  $("mTtl").textContent = title;
+  drawQr($("mBig"), t, 260);
+  $("mUrl").textContent = fullUrl(t.url);
+  $("modal").classList.add("open");
+}
+$("modal").onclick = () => $("modal").classList.remove("open");
+
+function render(){
+  const q = $("q").value.trim().toLowerCase();
+  const list = TOOLS.map((t,i)=>({...t,i})).filter(t => !q || (t.title+" "+t.desc).toLowerCase().includes(q));
+  $("count").textContent = list.length + " 件";
+  $("list").innerHTML = list.length ? list.map(t => `
+    <div class="row"><div class="line">
+      <span class="name">${esc(t.title)}</span>
+      <span class="desc">${esc(t.desc)}</span>
+      ${t.url || t.qr ? `<span class="thumb" data-i="${t.i}" title="クリックで拡大"></span>` : `<span class="thumb none">QRなし</span>`}
+      ${t.url ? `<a class="btn primary" href="${esc(t.url)}" target="_blank" rel="noopener">開く</a>`
+              : `<span class="btn off">準備中</span>`}
+    </div></div>`).join("") : `<div class="empty">該当するツールがありません</div>`;
+
+  document.querySelectorAll(".thumb[data-i]").forEach(el => {
+    const t = TOOLS[el.dataset.i];
+    drawQr(el, t, 40);
+    el.onclick = () => openModal(t.title, t);
+  });
+}
+
+// このページ自体のQR
+$("pageQr").onclick = () => openModal("このページのQRコード", { url: location.href, qr: "" });
+
+$("q").addEventListener("input", render);
+$("updated").textContent = UPDATED;
+render();
+</script>
+</body>
+</html>
